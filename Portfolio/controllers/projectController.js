@@ -86,7 +86,7 @@ var projectController = function(Proj){
                             paginationLinks.next = {};
 
                             paginationLinks.first.page = 1;
-                            paginationLinks.first.href = 'http://' + req.headers.host + '/api/projects/?' + 'start=' + 1 + '&limit' + limit;
+                            paginationLinks.first.href = 'http://' + req.headers.host + '/api/projects/?' + 'start=' + 1 + '&limit=' + limit;
 
                             paginationLinks.last.page = totalPages;
                             paginationLinks.last.href = 'http://' + req.headers.host + '/api/projects/?' + 'start=' + totalPages + '&limit=' + limit;
@@ -95,7 +95,7 @@ var projectController = function(Proj){
                             paginationLinks.previous.href = 'http://' + req.headers.host + '/api/projects/?' + 'start=' + newPagePrev + '&limit=' + limit;
 
                             paginationLinks.next.page = newPageNext;
-                            paginationLinks.next.href = 'http://' + req.header.host + 'api/projects/?' + 'start=' + newPageNext + '&limit' + limit;
+                            paginationLinks.next.href = 'http://' + req.headers.host + '/api/projects/?' + 'start=' + newPageNext + '&limit=' + limit;
 
                             data.forEach(function(element, index, array){
                                 var newProject = element.toJSON();
@@ -112,35 +112,6 @@ var projectController = function(Proj){
                     }
                 });
             });
-
-        // Proj.find(query, function(err, projects){
-        //     if(err){
-        //         res.status(500).send(err);
-        //     } else{
-        //         if(!req.accepts('json')){
-        //             res.status(406).send("Not Acceptable");
-        //         } else{
-        //             // var returnProjects = [];
-        //             var projs = {};
-        //             var items = projs.items = [];
-        //             var links = projs._links = {};
-        //             links.self = {};
-        //             links.self.href = 'http://' + req.headers.host + '/api/projects';
-        //
-        //             projects.forEach(function(element, index, array){
-        //                 var newProject = element.toJSON();
-        //                 var linksProjects = newProject._links = {};
-        //                 linksProjects.self = {};
-        //                 linksProjects.collection = {};
-        //                 linksProjects.self.href = 'http://' + req.headers.host + '/api/projects/' + newProject._id;
-        //                 linksProjects.collection.href = 'http://' + req.headers.host + '/api/projects/';
-        //
-        //                 items.push(newProject);
-        //             });
-        //             res.json(projs);
-        //         }
-        //     }
-        // });
     };
 
     var options = function(req, res){
@@ -148,10 +119,95 @@ var projectController = function(Proj){
         res.end();
     };
 
+
+    var getSpecificProject = function(req, res){
+        var returnProject = req.project.toJSON();
+        returnProject._links = {};
+        returnProject._links.self = {};
+        returnProject._links.collection = {};
+        returnProject._links.self.href = 'http://' + req.headers.host + '/api/projects/' + req.project._id;
+        returnProject._links.collection.href = 'http://' + req.headers.host + '/api/projects/';
+
+        res.json(returnProject);
+    };
+
+    var putSpecificProject = function(req, res){
+        req.project.name = req.body.name;
+        req.project.description = req.body.description;
+        req.project.developer = req.body.developer;
+        req.project.client = req.body.client;
+        req.project.typeOfProject = req.body.typeOfProject;
+        req.project.completed = req.body.completed;
+
+        if(!req.body.name){
+            res.status(400);
+            res.send('Name is required');
+        } else if(!req.body.description){
+            res.status(400);
+            res.send('Description is required');
+        } else if(!req.body.developer){
+            res.status(400);
+            res.send('Developer is required');
+        } else if(!req.body.client){
+            res.status(400);
+            res.send('Client is required');
+        } else if(!req.body.typeOfProject){
+            res.status(400);
+            res.send('Project Type is required');
+        } else{
+            req.project.save(function(err){
+                if(err){
+                    res.status(500).send(err);
+                } else{
+                    res.json(req.project);
+                }
+            });
+        }
+    };
+
+    var patchSpecificProject = function(req, res){
+        if(req.body._id){
+            delete req.body._id;
+        }
+
+        for(var p in req.body){
+            req.project[p] = req.body[p];
+        }
+        req.project.save(function(err){
+            if(err){
+                res.status(500).send(err);
+            } else{
+                res.json(req.project);
+            }
+        });
+    };
+
+    var deleteSpecificProject = function(req, res){
+        req.project.remove(function(err){
+            if(err){
+                res.status(500).send(err);
+            }
+            else {
+                res.status(204).send('Removed');
+            }
+        });
+    };
+
+    var optionsSpecificProject = function(req, res){
+        res.header('Access-Control-Allow-Methods', 'GET, PUT, PATCH, DELETE, OPTIONS');
+        res.end();
+    };
+
     return{
         post: post,
         get: get,
-        options: options
+        options: options,
+
+        getSpecificProject: getSpecificProject,
+        putSpecificProject: putSpecificProject,
+        patchSpecificProject: patchSpecificProject,
+        deleteSpecificProject: deleteSpecificProject,
+        optionsSpecificProject: optionsSpecificProject
     };
 };
 module.exports = projectController;
