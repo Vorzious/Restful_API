@@ -11,6 +11,13 @@ app.use(bodyParser.json());
 
 projectRouter = require('./Routes/projectRoutes')(Proj);
 
+
+app.use(function(req, res, next) {
+    res.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    res.header('Access-Control-Allow-Origin', '*');
+    next();
+});
+
 app.use('/api/projects', projectRouter);
 
 // Home page.
